@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碳足迹计算器 - 计算结果</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 结果页面专用装饰 */
+        .result-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(116, 185, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(162, 155, 254, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -3;
+        }
+        
+        /* 动态波浪背景 */
+        .waves-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+        }
+        
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100px;
+            background: linear-gradient(45deg, transparent 30%, rgba(0, 212, 170, 0.1) 50%, transparent 70%);
+            animation: wave-move 8s ease-in-out infinite;
+        }
+        
+        .wave:nth-child(1) { animation-delay: 0s; }
+        .wave:nth-child(2) { animation-delay: 2s; }
+        .wave:nth-child(3) { animation-delay: 4s; }
+        
+        @keyframes wave-move {
+            0%, 100% { transform: translateX(-50%); }
+            50% { transform: translateX(0%); }
+        }
+        
+        /* 浮动元素 */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-element {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0.1;
+            animation: float-element 10s ease-in-out infinite;
+        }
+        
+        .floating-element:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
+        .floating-element:nth-child(2) { top: 20%; right: 10%; animation-delay: 2s; }
+        .floating-element:nth-child(3) { top: 60%; left: 15%; animation-delay: 4s; }
+        .floating-element:nth-child(4) { top: 70%; right: 5%; animation-delay: 6s; }
+        .floating-element:nth-child(5) { top: 85%; left: 25%; animation-delay: 8s; }
+        
+        @keyframes float-element {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(15deg); }
+        }
+        
+        /* 增强的结果容器 */
+        .result-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .result-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 212, 170, 0.05), transparent);
+            animation: rotate 30s linear infinite;
+            z-index: -1;
+        }
+        
+        /* 结果标题增强 */
+        .result-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .result-title {
+            font-size: 3rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            animation: title-glow 3s ease-in-out infinite;
+        }
+        
+        @keyframes title-glow {
+            0%, 100% { text-shadow: 0 0 20px rgba(0, 212, 170, 0.3); }
+            50% { text-shadow: 0 0 40px rgba(0, 212, 170, 0.6); }
+        }
+        
+        .result-subtitle {
+            font-size: 1.3rem;
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        /* 图表容器增强 */
+        .chart-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        /* 结果摘要增强 */
+        .result-summary {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .result-summary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        /* 碳足迹数值显示 */
+        .footprint-display {
+            text-align: center;
+            margin: 3rem 0;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .footprint-display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        .footprint-number {
+            font-size: 5rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            animation: number-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes number-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .footprint-unit {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        
+        .footprint-level {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--gradient-primary);
+            color: white;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            animation: level-bounce 1s ease-out;
+        }
+        
+        @keyframes level-bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 建议卡片增强 */
+        .suggestions {
+            margin-top: 3rem;
+        }
+        
+        .suggestion-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        
+        .suggestion-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-primary);
+        }
+        
+        .suggestion-card:hover {
+            transform: translateX(10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+        
+        .suggestion-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            animation: icon-bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes icon-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .suggestion-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .suggestion-content {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        /* 比较数据增强 */
+        .comparison {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            margin: 2rem 0;
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .comparison::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        .comparison h3 {
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+        
+        .comparison-item {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: var(--transition);
+        }
+        
+        .comparison-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .comparison-label {
+            color: #666;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        /* 操作按钮增强 */
+        .action-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 3rem;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 1.2rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: var(--transition);
+        }
+        
+        .action-btn:hover::before {
+            left: 100%;
+        }
+        
+        .action-btn.primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 8px 25px rgba(0, 212, 170, 0.3);
+        }
+        
+        .action-btn.primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 212, 170, 0.4);
+        }
+        
+        .action-btn.secondary {
+            background: var(--gradient-secondary);
+            color: white;
+            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.3);
+        }
+        
+        .action-btn.secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(116, 185, 255, 0.4);
+        }
+        
+        .action-btn.outline {
+            background: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+        
+        .action-btn.outline:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-3px);
+        }
+        
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            color: white;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景装饰 -->
+    <div class="result-bg"></div>
+    
+    <!-- 动态波浪 -->
+    <div class="waves-bg">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+    
+    <!-- 浮动元素 -->
+    <div class="floating-elements">
+        <div class="floating-element">🌱</div>
+        <div class="floating-element">♻️</div>
+        <div class="floating-element">🌍</div>
+        <div class="floating-element">🌿</div>
+        <div class="floating-element">💚</div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在生成结果...</div>
+        </div>
+    </div>
+
+    <header>
+        <nav>
+            <a href="dashboard.html" class="logo">碳足迹计算器</a>
+            <ul>
+                <li><a href="dashboard.html">首页</a></li>
+                <li><a href="calculate.html">计算碳足迹</a></li>
+                <li><a href="quiz.html">环保测试</a></li>
+                <li><a href="#" onclick="logout()">退出登录</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="result-container">
+            <div class="result-header">
+                <h1 class="result-title">🌱 您的碳足迹计算结果</h1>
+                <p class="result-subtitle">了解您的碳排放情况，获取个性化建议，为地球做出贡献</p>
+            </div>
+
+            <!-- 碳足迹数值显示 -->
+            <div class="footprint-display">
+                <div class="footprint-number" id="totalFootprint">0</div>
+                <div class="footprint-unit">kg CO₂ / 年</div>
+                <div class="footprint-level" id="footprintLevel">低碳生活</div>
+            </div>
+
+            <!-- 图表展示 -->
+            <div class="chart-container">
+                <canvas id="carbonChart" width="400" height="200"></canvas>
+            </div>
+
+            <!-- 结果摘要 -->
+            <div class="result-summary">
+                <h3>📊 详细分析</h3>
+                <ul id="resultList">
+                    <!-- 结果列表将通过JavaScript动态生成 -->
+                </ul>
+            </div>
+
+            <!-- 比较数据 -->
+            <div class="comparison">
+                <h3>📈 数据对比</h3>
+                <div class="comparison-grid">
+                    <div class="comparison-item">
+                        <div class="comparison-value" id="yourFootprint">0</div>
+                        <div class="comparison-label">您的碳足迹</div>
+                    </div>
+                    <div class="comparison-item">
+                        <div class="comparison-value">2,500</div>
+                        <div class="comparison-label">中国平均</div>
+                    </div>
+                    <div class="comparison-item">
+                        <div class="comparison-value">4,500</div>
+                        <div class="comparison-label">全球平均</div>
+                    </div>
+                    <div class="comparison-item">
+                        <div class="comparison-value">1,000</div>
+                        <div class="comparison-label">低碳目标</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 个性化建议 -->
+            <div class="suggestions">
+                <h3 style="color: var(--primary-color); margin-bottom: 2rem; font-size: 1.8rem; font-weight: 700; text-align: center;">💡 个性化建议</h3>
+                <div id="suggestionsContainer">
+                    <!-- 建议将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="action-buttons">
+                <a href="calculate.html" class="action-btn primary">🔄 重新计算</a>
+                <a href="quiz.html" class="action-btn secondary">🎯 环保测试</a>
+                <a href="dashboard.html" class="action-btn outline">🏠 返回首页</a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 碳足迹计算器. 让我们一起为地球的可持续发展贡献力量 🌱</p>
+    </footer>
+
+    <script src="result.js"></script>
+</body>
+</html>

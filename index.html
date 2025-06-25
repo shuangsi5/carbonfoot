@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碳足迹计算器 - 主页</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="index.js"></script>
+</head>
+<body>
+    <div id="particlesBg"></div>
+    <p>正在跳转到登录页面...</p>
+    <script src="index.js"></script>
+    <script>
+      // 复用 chat.js 的粒子动画函数
+      function createParticles() {
+        const container = document.getElementById('particlesBg');
+        if (!container) return;
+        const w = window.innerWidth, h = window.innerHeight;
+        for (let i = 0; i < 30; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            const size = Math.random() * 25 + 10;
+            p.style.width = p.style.height = size + 'px';
+            p.style.left = Math.random() * (w - size) + 'px';
+            p.style.top = Math.random() * (h - size) + 'px';
+            p.style.animationDuration = (12 + Math.random() * 10) + 's';
+            p.style.animationDelay = (Math.random() * 12) + 's';
+            container.appendChild(p);
+        }
+      }
+      document.addEventListener('DOMContentLoaded', createParticles);
+    </script>
+</body>
+</html>

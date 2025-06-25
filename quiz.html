@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碳足迹计算器 - 环保知识测试</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 答题页面专用装饰 */
+        .quiz-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(116, 185, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(162, 155, 254, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -3;
+        }
+        
+        /* 动态圆点背景 */
+        .dots-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+        }
+        
+        .dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(0, 212, 170, 0.3);
+            border-radius: 50%;
+            animation: dot-pulse 4s ease-in-out infinite;
+        }
+        
+        .dot:nth-child(1) { top: 15%; left: 10%; animation-delay: 0s; }
+        .dot:nth-child(2) { top: 25%; right: 15%; animation-delay: 1s; }
+        .dot:nth-child(3) { top: 45%; left: 20%; animation-delay: 2s; }
+        .dot:nth-child(4) { top: 65%; right: 10%; animation-delay: 3s; }
+        .dot:nth-child(5) { top: 85%; left: 15%; animation-delay: 0.5s; }
+        .dot:nth-child(6) { top: 35%; left: 80%; animation-delay: 1.5s; }
+        .dot:nth-child(7) { top: 75%; left: 85%; animation-delay: 2.5s; }
+        
+        @keyframes dot-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+        }
+        
+        /* 浮动图标 */
+        .floating-icons {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-icon {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            animation: float-icon 8s ease-in-out infinite;
+        }
+        
+        .floating-icon:nth-child(1) { top: 20%; left: 5%; animation-delay: 0s; }
+        .floating-icon:nth-child(2) { top: 30%; right: 20%; animation-delay: 2s; }
+        .floating-icon:nth-child(3) { top: 60%; left: 10%; animation-delay: 4s; }
+        .floating-icon:nth-child(4) { top: 70%; right: 5%; animation-delay: 6s; }
+        .floating-icon:nth-child(5) { top: 90%; left: 25%; animation-delay: 1s; }
+        
+        @keyframes float-icon {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(15deg); }
+        }
+        
+        /* 增强的答题卡片 */
+        .question-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .question-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 212, 170, 0.05), transparent);
+            animation: rotate 25s linear infinite;
+            z-index: -1;
+        }
+        
+        /* 进度条增强 */
+        .progress-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-text {
+            font-weight: 700;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+        
+        .progress-percentage {
+            font-weight: 700;
+            color: var(--text-color);
+            font-size: 1.2rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: progress-shine 2s ease-in-out infinite;
+        }
+        
+        @keyframes progress-shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        /* 选项增强 */
+        .option {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 170, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .option:hover::before {
+            left: 100%;
+        }
+        
+        .option.selected {
+            position: relative;
+        }
+        
+        .option.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            right: 1.5rem;
+            transform: translateY(-50%);
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.2rem;
+            animation: check-bounce 0.5s ease-out;
+        }
+        
+        @keyframes check-bounce {
+            0% { transform: translateY(-50%) scale(0); }
+            50% { transform: translateY(-50%) scale(1.2); }
+            100% { transform: translateY(-50%) scale(1); }
+        }
+        
+        /* 开始测试按钮 */
+        .start-btn {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1.5rem 3rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.3rem;
+            font-weight: 700;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
+        }
+        
+        .start-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: var(--transition);
+        }
+        
+        .start-btn:hover::before {
+            left: 100%;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 212, 170, 0.4);
+        }
+        
+        /* 提交按钮 */
+        .submit-btn {
+            background: var(--gradient-secondary);
+            color: white;
+            padding: 1.2rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(116, 185, 255, 0.3);
+        }
+        
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: var(--transition);
+        }
+        
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(116, 185, 255, 0.4);
+        }
+        
+        /* 结果展示增强 */
+        .result-summary {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            padding: 3rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--box-shadow);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        
+        .result-summary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+        
+        .score-display {
+            font-size: 4rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 2rem 0;
+            animation: score-pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes score-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .score-label {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        
+        .grade-badge {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: var(--gradient-primary);
+            color: white;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            animation: badge-bounce 1s ease-out;
+        }
+        
+        @keyframes badge-bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 题目解析增强 */
+        .explanation {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin: 1.5rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .explanation::before {
+            content: '💡';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            animation: tip-bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes tip-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .explanation-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .explanation-content {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            color: white;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景装饰 -->
+    <div class="quiz-bg"></div>
+    
+    <!-- 动态圆点 -->
+    <div class="dots-bg">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
+    
+    <!-- 浮动图标 -->
+    <div class="floating-icons">
+        <div class="floating-icon">🌱</div>
+        <div class="floating-icon">♻️</div>
+        <div class="floating-icon">🌍</div>
+        <div class="floating-icon">🌿</div>
+        <div class="floating-icon">💚</div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在生成测试题目...</div>
+        </div>
+    </div>
+
+    <header>
+        <nav>
+            <a href="dashboard.html" class="logo">🌱 碳足迹计算器</a>
+            <ul>
+                <li><a href="dashboard.html">首页</a></li>
+                <li><a href="calculate.html">计算</a></li>
+                <li><a href="quiz.html" class="active">答题</a></li>
+                <li><a href="login.html">退出</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="quiz-container">
+            <h1 style="text-align: center; margin-bottom: 3rem; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2.5rem; font-weight: 800;">🎯 环保知识测试</h1>
+            
+            <!-- 开始界面 -->
+            <div id="startScreen">
+                <div class="question-card">
+                    <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 2rem; font-size: 2rem;">欢迎参加环保知识测试！</h2>
+                    <p style="text-align: center; color: #666; margin-bottom: 2rem; font-size: 1.2rem; line-height: 1.8;">
+                        测试将随机抽取10道环保知识题目，涵盖气候变化、可持续发展、绿色生活等多个方面。
+                        完成测试后您将获得详细解析和个性化建议。
+                    </p>
+                    
+                    <div style="background: rgba(0, 212, 170, 0.1); border-radius: var(--border-radius); padding: 2rem; margin: 2rem 0;">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">📋 测试说明</h3>
+                        <ul style="color: #666; line-height: 1.8; text-align: left;">
+                            <li>🎲 随机抽取10道题目</li>
+                            <li>⏱️ 每题不限时间，请仔细思考</li>
+                            <li>📊 完成后显示得分和详细解析</li>
+                            <li>💡 学习环保知识，提升环保意识</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="start-btn" onclick="startQuiz()">🚀 开始测试</button>
+                </div>
+            </div>
+
+            <!-- 答题界面 -->
+            <div id="quizScreen" style="display: none;">
+                <!-- 进度条 -->
+                <div class="progress-container">
+                    <div class="progress-info">
+                        <div class="progress-text">题目进度</div>
+                        <div class="progress-percentage" id="progressText">1 / 10</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 10%"></div>
+                    </div>
+                </div>
+
+                <!-- 题目卡片 -->
+                <div class="question-card">
+                    <div class="question-text" id="questionText"></div>
+                    <div class="options" id="optionsContainer"></div>
+                </div>
+
+                <button class="submit-btn" id="submitBtn" onclick="submitAnswer()" style="display: none;">📝 提交答案</button>
+            </div>
+
+            <!-- 结果界面 -->
+            <div id="resultScreen" style="display: none;">
+                <div class="result-summary">
+                    <h2 style="color: var(--primary-color); margin-bottom: 2rem;">🎉 测试完成！</h2>
+                    <div class="score-display" id="scoreDisplay">0</div>
+                    <div class="score-label">您的得分</div>
+                    <div class="grade-badge" id="gradeBadge">初级环保者</div>
+                </div>
+
+                <div id="answersContainer"></div>
+
+                <div style="text-align: center; margin-top: 3rem;">
+                    <a href="quiz.html" class="cta-button">🔄 重新测试</a>
+                    <a href="dashboard.html" class="cta-button secondary" style="margin-left: 1rem;">🏠 返回仪表板</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 碳足迹计算器 - 为地球，为未来</p>
+    </footer>
+
+    <script src="quiz.js"></script>
+</body>
+</html> 

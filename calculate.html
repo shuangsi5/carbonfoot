@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碳足迹计算器 - 计算</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 计算页面专用装饰 */
+        .calculate-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 20%, rgba(0, 212, 170, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(116, 185, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(162, 155, 254, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -3;
+        }
+        
+        /* 动态线条背景 */
+        .lines-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+        }
+        
+        .line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 170, 0.2), transparent);
+            animation: line-move 8s linear infinite;
+        }
+        
+        .line:nth-child(1) { top: 20%; width: 200px; animation-delay: 0s; }
+        .line:nth-child(2) { top: 40%; width: 150px; animation-delay: 2s; }
+        .line:nth-child(3) { top: 60%; width: 180px; animation-delay: 4s; }
+        .line:nth-child(4) { top: 80%; width: 120px; animation-delay: 6s; }
+        
+        @keyframes line-move {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100vw); opacity: 0; }
+        }
+        
+        /* 浮动数字 */
+        .floating-numbers {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .floating-number {
+            position: absolute;
+            font-size: 1.5rem;
+            color: rgba(0, 212, 170, 0.3);
+            font-weight: bold;
+            animation: float-number 10s ease-in-out infinite;
+        }
+        
+        .floating-number:nth-child(1) { top: 15%; left: 10%; animation-delay: 0s; }
+        .floating-number:nth-child(2) { top: 25%; right: 15%; animation-delay: 2s; }
+        .floating-number:nth-child(3) { top: 55%; left: 5%; animation-delay: 4s; }
+        .floating-number:nth-child(4) { top: 65%; right: 10%; animation-delay: 6s; }
+        .floating-number:nth-child(5) { top: 85%; left: 20%; animation-delay: 8s; }
+        
+        @keyframes float-number {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-30px) rotate(10deg); opacity: 0.8; }
+        }
+        
+        /* 增强的表单效果 */
+        .form-section {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .form-section::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(0, 212, 170, 0.05), transparent);
+            animation: rotate 30s linear infinite;
+            z-index: -1;
+        }
+        
+        /* 输入框增强 */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .input-group label {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .input-group input {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .input-group::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(0, 212, 170, 0.05), transparent);
+            border-radius: var(--border-radius);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1;
+        }
+        
+        .input-group:hover::before {
+            opacity: 1;
+        }
+        
+        /* 进度指示器 */
+        .progress-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .progress-step::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid rgba(0, 212, 170, 0.3);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+            z-index: -1;
+        }
+        
+        .progress-step.active::before {
+            background: var(--gradient-primary);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+        }
+        
+        .progress-step.completed::before {
+            background: var(--gradient-primary);
+            border-color: var(--primary-color);
+        }
+        
+        .progress-step.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .progress-step-label {
+            margin-top: 60px;
+            font-weight: 600;
+            color: var(--text-color);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        
+        .progress-line {
+            position: absolute;
+            top: 45px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 212, 170, 0.2);
+            z-index: 1;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: width 0.5s ease;
+            border-radius: 1px;
+        }
+        
+        /* 计算按钮增强 */
+        .calculate-btn {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1.5rem 3rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.3rem;
+            font-weight: 700;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
+        }
+        
+        .calculate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: var(--transition);
+        }
+        
+        .calculate-btn:hover::before {
+            left: 100%;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 212, 170, 0.4);
+        }
+        
+        .calculate-btn:active {
+            transform: translateY(-2px);
+        }
+        
+        /* 提示信息 */
+        .tip-box {
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tip-box::before {
+            content: '💡';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.5rem;
+            animation: tip-bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes tip-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .tip-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .tip-content {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .loading-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .loading-text {
+            color: white;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景装饰 -->
+    <div class="calculate-bg"></div>
+    
+    <!-- 动态线条 -->
+    <div class="lines-bg">
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+        <div class="line"></div>
+    </div>
+    
+    <!-- 浮动数字 -->
+    <div class="floating-numbers">
+        <div class="floating-number">CO₂</div>
+        <div class="floating-number">kg</div>
+        <div class="floating-number">🌱</div>
+        <div class="floating-number">♻️</div>
+        <div class="floating-number">🌍</div>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">正在计算您的碳足迹...</div>
+        </div>
+    </div>
+
+    <header>
+        <nav>
+            <a href="dashboard.html" class="logo">🌱 碳足迹计算器</a>
+            <ul>
+                <li><a href="dashboard.html">首页</a></li>
+                <li><a href="calculate.html" class="active">计算</a></li>
+                <li><a href="quiz.html">答题</a></li>
+                <li><a href="login.html">退出</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="form-container">
+            <h1 style="text-align: center; margin-bottom: 3rem; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2.5rem; font-weight: 800;">🌱 碳足迹计算器</h1>
+            
+            <!-- 进度指示器 -->
+            <div class="progress-indicator">
+                <div class="progress-line">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <div class="progress-step active" data-step="1">
+                    <div class="progress-step-label">交通出行</div>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="progress-step-label">能源使用</div>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="progress-step-label">饮食消费</div>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="progress-step-label">购物消费</div>
+                </div>
+            </div>
+
+            <!-- 提示信息 -->
+            <div class="tip-box">
+                <div class="tip-title">计算说明</div>
+                <div class="tip-content">
+                    请根据您的实际情况填写以下信息。所有数据仅用于计算碳足迹，不会保存您的个人信息。
+                    计算基于国际通用的碳排放系数，结果仅供参考。
+                </div>
+            </div>
+
+            <form id="carbonForm">
+                <!-- 交通出行 -->
+                <div class="form-section" id="section1">
+                    <h2>🚗 交通出行</h2>
+                    <div class="input-group">
+                        <label for="carDistance">私家车行驶距离 (公里/年)</label>
+                        <input type="number" id="carDistance" name="carDistance" min="0" step="0.1" placeholder="请输入年行驶距离">
+                    </div>
+                    <div class="input-group">
+                        <label for="publicTransport">公共交通使用次数 (次/年)</label>
+                        <input type="number" id="publicTransport" name="publicTransport" min="0" placeholder="请输入年使用次数">
+                    </div>
+                    <div class="input-group">
+                        <label for="airTravel">飞机旅行次数 (次/年)</label>
+                        <input type="number" id="airTravel" name="airTravel" min="0" placeholder="请输入年飞行次数">
+                    </div>
+                </div>
+
+                <!-- 能源使用 -->
+                <div class="form-section" id="section2" style="display: none;">
+                    <h2>⚡ 能源使用</h2>
+                    <div class="input-group">
+                        <label for="electricity">家庭用电量 (度/年)</label>
+                        <input type="number" id="electricity" name="electricity" min="0" placeholder="请输入年用电量">
+                    </div>
+                    <div class="input-group">
+                        <label for="gas">天然气使用量 (立方米/年)</label>
+                        <input type="number" id="gas" name="gas" min="0" placeholder="请输入年用气量">
+                    </div>
+                    <div class="input-group">
+                        <label for="heating">取暖费用 (元/年)</label>
+                        <input type="number" id="heating" name="heating" min="0" placeholder="请输入年取暖费用">
+                    </div>
+                </div>
+
+                <!-- 饮食消费 -->
+                <div class="form-section" id="section3" style="display: none;">
+                    <h2>🍽️ 饮食消费</h2>
+                    <div class="input-group">
+                        <label for="meatConsumption">肉类消费 (公斤/年)</label>
+                        <input type="number" id="meatConsumption" name="meatConsumption" min="0" step="0.1" placeholder="请输入年肉类消费量">
+                    </div>
+                    <div class="input-group">
+                        <label for="dairyConsumption">乳制品消费 (公斤/年)</label>
+                        <input type="number" id="dairyConsumption" name="dairyConsumption" min="0" step="0.1" placeholder="请输入年乳制品消费量">
+                    </div>
+                    <div class="input-group">
+                        <label for="organicFood">有机食品消费比例 (%)</label>
+                        <input type="number" id="organicFood" name="organicFood" min="0" max="100" placeholder="请输入有机食品消费比例">
+                    </div>
+                </div>
+
+                <!-- 购物消费 -->
+                <div class="form-section" id="section4" style="display: none;">
+                    <h2>🛒 购物消费</h2>
+                    <div class="input-group">
+                        <label for="clothing">服装消费 (元/年)</label>
+                        <input type="number" id="clothing" name="clothing" min="0" placeholder="请输入年服装消费">
+                    </div>
+                    <div class="input-group">
+                        <label for="electronics">电子产品消费 (元/年)</label>
+                        <input type="number" id="electronics" name="electronics" min="0" placeholder="请输入年电子产品消费">
+                    </div>
+                    <div class="input-group">
+                        <label for="waste">垃圾产生量 (公斤/年)</label>
+                        <input type="number" id="waste" name="waste" min="0" placeholder="请输入年垃圾产生量">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="button" id="prevBtn" class="submit-button" style="flex: 1; background: var(--gradient-secondary);" onclick="previousSection()">上一步</button>
+                    <button type="button" id="nextBtn" class="submit-button" style="flex: 1;" onclick="nextSection()">下一步</button>
+                </div>
+
+                <button type="submit" class="calculate-btn" id="calculateBtn" style="display: none;">🚀 计算我的碳足迹</button>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 碳足迹计算器 - 为地球，为未来</p>
+    </footer>
+
+    <!-- 引入JavaScript文件 -->
+    <script src="calculate.js"></script>
+</body>
+</html>
